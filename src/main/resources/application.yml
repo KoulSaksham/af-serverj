@@ -1,3 +1,5 @@
+server:
+  is-secure: false
 spring:
   application:
     name: "activiti"
@@ -12,7 +14,8 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       # can connect to a password protected redis, just need to uncomment the below line.
-      # password: ${REDIS_PASSWORD:superadmin}
+      password: ${REDIS_PASSWORD:superadmin}
+      username: ${REDIS_USERNAME:default}
   datasource:
     activiti:
       url: ${ACTIVITI_DB_URL}
@@ -42,7 +45,7 @@ spring:
     ignore-missing-migrations: true
     outOfOrder: true
 jwt:
-  excluded-paths: /api/auth/login,/h2-console/**,/actuator/**
+  excluded-paths: /api/auth/login,/h2-console/**,/actuator/**,/swagger-ui.html,/swagger-ui/**,/v3/api-docs/**
   access_token:
     expire: ${JWT_ACCESS_EXPIRE_TIME:15} # in minutes
   refresh_token:

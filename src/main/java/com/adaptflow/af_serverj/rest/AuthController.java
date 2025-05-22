@@ -12,11 +12,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.adaptflow.af_serverj.common.exception.ErrorCode;
 import com.adaptflow.af_serverj.common.exception.ServiceException;
 import com.adaptflow.af_serverj.configuration.db.adaptflow.service.login.LoginService;
-import com.adaptflow.af_serverj.model.dto.UserRegistrationDTO;
+import com.adaptflow.af_serverj.model.dto.user.LoginRequestDTO;
+import com.adaptflow.af_serverj.model.dto.user.UserDetailsDTO;
+import com.adaptflow.af_serverj.model.dto.user.UserRegistrationDTO;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequestMapping("/api/auth")
 @Slf4j
 @Validated
+@Tag(name = "Auth Controller", description = "APIs for managing authentication")
 public class AuthController {
 
     @Autowired
@@ -34,12 +40,13 @@ public class AuthController {
      * Validates the credentials and returns access & refresh tokens if
      * authentication is successful.
      *
-     * @param request A map containing "username" and "password" fields.
+     * @param A request object containing "username" and "password" fields.
      * @return A response containing user details and authentication tokens.
      * @throws ServiceException If authentication fails.
      */
-    @PostMapping(path = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<?, ?>> login(@RequestBody Map<String, String> request) throws ServiceException {
+    @PostMapping(path = "/login")
+    @Operation(summary = "Login", description = "Adds a JWT token in cookies")
+    public ResponseEntity<String> login(@RequestBody LoginRequestDTO request) throws ServiceException {
         try {
             return loginService.handleUserLogin(request);
         } catch (ServiceException e) {
@@ -47,7 +54,7 @@ public class AuthController {
         } catch (Exception e) {
             // Handle unexpected errors (log and return a generic error response)
             log.error("Unexpected error during login", e);
-            throw new ServiceException(ErrorCode.SERVER_ERROR);
+            throw new ServiceException(ErrorCode.UNAUTHORIZED_ACCESS);
         }
     }
 
@@ -68,7 +75,7 @@ public class AuthController {
             throw e; // Let the global exception handler take care of this
         } catch (Exception e) {
             // Handle unexpected errors (log and return a generic error response)
-            log.error("Unexpected error during login", e);
+            log.error("Unexpected error during new user registration", e);
             throw new ServiceException(ErrorCode.SERVER_ERROR);
         }
     }
@@ -82,6 +89,25 @@ public class AuthController {
     @PostMapping(path = "/logout", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<?, ?>> logoutUser() {
         return loginService.processLogout();
+    }
+    
+    /**
+     * Retrieves current user details.
+     *
+     * @return A response containing user details (username, firstname, lastname).
+     * @throws ServiceException If user details retrieval fails.
+     */
+    @Operation(summary = "Logged in user details")
+    @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserDetailsDTO> getCurrentUserDetails() throws ServiceException {
+        try {
+            return ResponseEntity.ok(loginService.getCurrentUserDetails());
+        } catch (ServiceException e) {
+            throw e; 
+        } catch (Exception e) {
+            log.error("Unexpected error during user details retrieval", e);
+            throw new ServiceException(ErrorCode.SERVER_ERROR);
+        }
     }
 
 }
